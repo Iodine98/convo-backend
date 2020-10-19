@@ -1,13 +1,15 @@
-import speech from "@google-cloud/speech";
+const speech = require('@google-cloud/speech');
+const fs = require('fs');
 
-async function SpeechToTextAPI(audioBlob) {
+exports.speechToTextAPI = async (filePath) => {
 	const client = new speech.SpeechClient();
-	const audioBytes = audioBlob.toString('base64');
+	const file = fs.readFileSync(filePath)
+	const audioBytes = file.toString('base64');
 	const audio = {
 		content: audioBytes,
 	};
 	const config = {
-		encoding: 'LINEAR16',
+		encoding: 'FLAC',
 		sampleRateHertz: 16000,
 		languageCode: 'en-US',
 	};
@@ -17,9 +19,9 @@ async function SpeechToTextAPI(audioBlob) {
 	}
 
 	const [response] = await client.recognize(request);
-	const transcription = response.results
-		.map(result => result.alternatives[0].transcript)
-		.join('\n');
-	console.log(`Transcription: ${transcription}`);
+	console.log(response.results);
+	// const transcription = response.results
+	// 	.map(result => result.alternatives[0].transcript)
+	// 	.join('\n');
+	// console.log(`Transcription: ${transcription}`);
 }
-// SpeechToTextAPI().catch(console.error);
