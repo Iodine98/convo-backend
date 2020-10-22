@@ -1,6 +1,6 @@
 const express = require('express');
-const path = require('path');
 const app = express();
+const path = require('path');
 const multer = require('multer')
 const upload = multer();
 app.use(express.static(path.join(__dirname, 'build')));
@@ -8,8 +8,7 @@ const {createFile} = require("./file");
 const {createDirectory} = require("./file");
 const {speechToTextAPI} = require("./SpeechToTextAPI");
 
-
-app.post('/blob', upload.single('audioBlob'), (req, res) => {
+app.post('/blob', upload.single('audioFile'), (req, res) => {
 	if (req.file) {
 		new Promise((resolve) => {
 			resolve(createDirectory('audio'));
@@ -17,8 +16,8 @@ app.post('/blob', upload.single('audioBlob'), (req, res) => {
 			new Promise((resolve) => {
 				resolve(createFile(req.file, location));
 			}).then(filePath => {
-				speechToTextAPI(filePath).then(() => {
-					console.log('Successful call');
+				speechToTextAPI(filePath).then(transcription => {
+					console.log(transcription);
 					res.sendStatus(200);
 				}).catch(console.error);
 			})
@@ -26,6 +25,7 @@ app.post('/blob', upload.single('audioBlob'), (req, res) => {
 	} else {
 		res.sendStatus(400);
 	}
-	console.log('\n');
+	shutDown();
 });
-app.listen(process.env.PORT || 9000);
+const server = app.listen(process.env.PORT || 9000);
+const shutDown = () => server.close();
