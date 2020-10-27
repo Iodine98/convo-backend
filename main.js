@@ -1,40 +1,29 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-const {readFile} = require("./file");
 const {convertFile} = require("./file");
 const {createFile} = require("./file");
 const {speechToTextAPI} = require("./SpeechToTextAPI");
 const destinationFilePath = __dirname + `\\audio\\audioFile.flac`;
 app.use(bodyParser.raw({type: 'audio/webm'}));
-const transcriptPath = __dirname + `\\transcript\\transcript.txt`;
-
-app.get('/text', ((req, res) => {
-	readFile(transcriptPath).then(data => {
-		res.send(data);
-	}).catch(error => {
-		res.sendStatus(400);
-		console.error(error);
-	});
-}));
-
 
 app.post('/file', (req, res) => {
+	console.log(req.header('Sign'));
 	if (req.body) {
-		createFile(req.body).then(filePath => {
-			convertFile(filePath, destinationFilePath).then(fp => {
-				speechToTextAPI(fp).then(transcription => {
-					createFile(transcription, transcriptPath).then(() => {
-						res.send(transcription);
-					});
-				});
-			})
-
-		}).catch(console.error);
+		const filePath = createFile(req.body);
+		const flac_filePath = convertFile(filePath, destinationFilePath);
+		speechToTextAPI(flac_filePath).then(transcription => {
+			res.setHeader('code', 200);
+			res.send(transcription);
+		}).catch(error => {
+			console.error(error);
+			res.sendStatus(400);
+		});
 	} else {
+		res.setHeader('Sign', req.header('Sign'));
 		res.sendStatus(400);
 	}
 });
-const server = app.listen(process.env.PORT || 9000);
-const shutDown = () => server.close();
+app.listen(process.env.PORT || 9000);
+// const shutDown = () => server.close();
 
