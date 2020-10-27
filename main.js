@@ -1,31 +1,40 @@
 const express = require('express');
 const app = express();
-const path = require('path');
-const multer = require('multer')
-const upload = multer();
-app.use(express.static(path.join(__dirname, 'build')));
+const bodyParser = require('body-parser');
+const {readFile} = require("./file");
+const {convertFile} = require("./file");
 const {createFile} = require("./file");
-const {createDirectory} = require("./file");
 const {speechToTextAPI} = require("./SpeechToTextAPI");
+const destinationFilePath = __dirname + `\\audio\\audioFile.flac`;
+app.use(bodyParser.raw({type: 'audio/webm'}));
+const transcriptPath = __dirname + `\\transcript\\transcript.txt`;
 
-app.post('/blob', upload.single('audioFile'), (req, res) => {
-	if (req.file) {
-		new Promise((resolve) => {
-			resolve(createDirectory('audio'));
-		}).then(location => {
-			new Promise((resolve) => {
-				resolve(createFile(req.file, location));
-			}).then(filePath => {
-				speechToTextAPI(filePath).then(transcription => {
-					console.log(transcription);
-					res.sendStatus(200);
-				}).catch(console.error);
+app.get('/text', ((req, res) => {
+	readFile(transcriptPath).then(data => {
+		res.send(data);
+	}).catch(error => {
+		res.sendStatus(400);
+		console.error(error);
+	});
+}));
+
+
+app.post('/file', (req, res) => {
+	if (req.body) {
+		createFile(req.body).then(filePath => {
+			convertFile(filePath, destinationFilePath).then(fp => {
+				speechToTextAPI(fp).then(transcription => {
+					createFile(transcription, transcriptPath).then(() => {
+						res.send(transcription);
+					});
+				});
 			})
-		});
+
+		}).catch(console.error);
 	} else {
 		res.sendStatus(400);
 	}
-	shutDown();
 });
 const server = app.listen(process.env.PORT || 9000);
 const shutDown = () => server.close();
+

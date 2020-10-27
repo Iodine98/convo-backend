@@ -1,23 +1,34 @@
 const fs = require('fs');
+// Installing ffmpeg is required on the server (add bin folder of ffmpeg package to PATH variable)
+const {spawn} = require('child_process')
 
-
-exports.createDirectory = (path) => {
-	const fullPath = __dirname + `\\${path}`;
-	fs.stat(fullPath, ((err) => {
-		if (err == null) {
-			console.log(fullPath + " is an existing directory.");
-		} else if (err.code === 'ENOENT') {
-			fs.mkdirSync(fullPath);
-			console.log(fullPath + " directory has been created.");
-		} else {
-			throw err;
-		}
-	}));
+exports.createFile = async (dataBuffer, fullPath = __dirname + '\\audio\\audioFile.webm') => {
+	fs.writeFileSync(fullPath, Buffer.from(dataBuffer));
 	return fullPath;
 }
 
-exports.createFile = (file, location) => {
-	const fullPath = location + `\\${file.originalname}`;
-	fs.writeFileSync(fullPath, Buffer.from(new Uint8Array(file.buffer)));
-	return fullPath;
+exports.readFile = async (fullPath) => {
+	try {
+		return fs.readFileSync(fullPath, 'utf8');
+	} catch (e) {
+		console.error(e);
+	}
 }
+
+exports.fileToBytes = (filepath) => {
+	const file = fs.readFileSync(filepath);
+	return file.toString('base64');
+};
+
+exports.convertFile = async (filepath, destinationFilePath) => {
+	try {
+		const ffmpeg = spawn('ffmpeg', ['-y', '-i', filepath, destinationFilePath]);
+		ffmpeg.stdout.on('data', data => console.log(`stdout: ${data}`));
+		ffmpeg.stderr.on('data', data => console.log(`stderr: ${data}`));
+		ffmpeg.on('close', code => console.log(`Conversion has been finished. Process exited with code ${code}`));
+	} catch (e) {
+		console.error(e);
+	}
+	return destinationFilePath;
+}
+
