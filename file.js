@@ -20,7 +20,7 @@ exports.fileToBytes = (filepath) => {
 	return file.toString('base64');
 };
 
-exports.convertFile = (filepath, destinationFilePath) => {
+exports.convertFile = async (filepath, destinationFilePath) => {
 	try {
 		const ffmpeg = spawn('ffmpeg', ['-y', '-i', filepath, destinationFilePath]);
 		ffmpeg.stdout.on('data', data => console.log(`stdout: ${data}`));
@@ -31,4 +31,3 @@ exports.convertFile = (filepath, destinationFilePath) => {
 	}
 	return destinationFilePath;
 }
-

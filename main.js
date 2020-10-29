@@ -11,13 +11,15 @@ app.post('/file', (req, res) => {
 	console.log(req.header('Sign'));
 	if (req.body) {
 		const filePath = createFile(req.body);
-		const flac_filePath = convertFile(filePath, destinationFilePath);
-		speechToTextAPI(flac_filePath).then(transcription => {
-			res.setHeader('code', 200);
-			res.send(transcription);
-		}).catch(error => {
-			console.error(error);
-			res.sendStatus(400);
+		convertFile(filePath, destinationFilePath).then(flacFilePath => {
+			setTimeout(() => speechToTextAPI(flacFilePath).then(transcription => {
+				res.setHeader('code', 200);
+				res.send(transcription);
+			}).catch(error => {
+				console.error(error);
+				res.sendStatus(400);
+			}), 500)
+
 		});
 	} else {
 		res.setHeader('Sign', req.header('Sign'));
